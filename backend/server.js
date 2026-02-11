@@ -10,7 +10,26 @@ app.use(express.json());
 
 const bot = new OrderBot(process.env.BOT_TOKEN, process.env.OWNER_CHAT_ID);
 
-// ---------- ENDPOINTS PÚBLICOS ----------
+// Configurar webhook en producción
+if (process.env.NODE_ENV === 'production' && process.env.WEBHOOK_URL) {
+  bot.bot.setWebHook(process.env.WEBHOOK_URL);
+  console.log('✅ Webhook configurado:', process.env.WEBHOOK_URL);
+} else {
+  // En desarrollo, iniciar polling
+  bot.bot.startPolling();
+  console.log('✅ Polling iniciado (desarrollo)');
+}
+
+// Inicializar handlers después de definir el bot (tanto para webhook como polling)
+bot.initHandlers();
+
+// Endpoint para webhook (Telegram enviará las actualizaciones aquí)
+app.post('/webhook', (req, res) => {
+  bot.bot.processUpdate(req.body);
+  res.sendStatus(200);
+});
+
+// ---------- ENDPOINTS PÚBLICOS (API REST) ----------
 app.get('/api/productos', async (req, res) => {
   try {
     const result = await db.query('SELECT * FROM productos WHERE cantidad > 0 ORDER BY nombre');
@@ -20,7 +39,6 @@ app.get('/api/productos', async (req, res) => {
   }
 });
 
-// Carrito
 app.get('/api/carrito/:sessionId', async (req, res) => {
   const { sessionId } = req.params;
   try {
@@ -73,7 +91,6 @@ app.post('/api/carrito/eliminar', async (req, res) => {
   }
 });
 
-// Crear pedido desde web
 app.post('/api/pedido', async (req, res) => {
   const { sessionId, clienteNombre, items, metodoPago } = req.body;
   if (!sessionId || !clienteNombre || !items || items.length === 0 || !metodoPago) {
@@ -119,7 +136,6 @@ app.post('/api/pedido', async (req, res) => {
   }
 });
 
-// Obtener pedidos de un cliente (web)
 app.get('/api/pedidos/:sessionId', async (req, res) => {
   const { sessionId } = req.params;
   try {
@@ -130,7 +146,6 @@ app.get('/api/pedidos/:sessionId', async (req, res) => {
   }
 });
 
-// Ruta de prueba
 app.get('/', (req, res) => {
   res.send('Bot API funcionando ✅');
 });
