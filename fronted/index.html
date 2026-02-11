@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tienda Online</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🛍️ Tienda</h1>
+    </header>
+
+    <!-- Catálogo de productos -->
+    <section id="catalogo">
+      <h2>Productos disponibles</h2>
+      <div id="productos-list" class="productos-grid"></div>
+    </section>
+
+    <!-- Carrito -->
+    <section id="carrito" style="display: none;">
+      <h2>Tu pedido</h2>
+      <div id="carrito-items"></div>
+      <div class="carrito-total">
+        <strong>Total: $<span id="total-carrito">0</span></strong>
+      </div>
+      <form id="checkout-form">
+        <div class="form-group">
+          <label for="nombre">Nombre completo</label>
+          <input type="text" id="nombre" required>
+        </div>
+        <button type="submit">Enviar pedido</button>
+      </form>
+      <button id="seguir-comprando">Seguir comprando</button>
+    </section>
+
+    <!-- Estado del pedido -->
+    <section id="estado-pedido" style="display: none;">
+      <div id="mensaje-estado"></div>
+      <div id="detalle-pedido"></div>
+      <div id="acciones-pedido"></div>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
