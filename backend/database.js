@@ -1,4 +1,3 @@
-// backend/database.js
 const { Pool } = require('pg');
 require('dotenv').config();
 
@@ -9,7 +8,6 @@ const pool = new Pool({
   }
 });
 
-// Inicializar tablas
 const initDB = async () => {
   try {
     // Tabla de productos
@@ -32,6 +30,7 @@ const initDB = async () => {
         cliente_nombre TEXT NOT NULL,
         cliente_chat_id TEXT,
         session_id TEXT NOT NULL,
+        metodo_pago TEXT,
         estado TEXT NOT NULL DEFAULT 'esperando_confirmacion_cliente',
         fecha_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         fecha_aprobacion TIMESTAMP,
@@ -39,7 +38,7 @@ const initDB = async () => {
       )
     `);
 
-    // Tabla de items del pedido
+    // Tabla de items de pedido
     await pool.query(`
       CREATE TABLE IF NOT EXISTS items_pedido (
         id SERIAL PRIMARY KEY,
@@ -47,6 +46,16 @@ const initDB = async () => {
         producto_id INTEGER REFERENCES productos(id),
         cantidad INTEGER NOT NULL,
         precio_unitario DECIMAL(10,2) NOT NULL
+      )
+    `);
+
+    // Tabla de carritos (para clientes)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS carritos (
+        id SERIAL PRIMARY KEY,
+        chat_id TEXT NOT NULL UNIQUE,
+        productos JSONB NOT NULL DEFAULT '[]',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 

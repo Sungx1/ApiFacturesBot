@@ -1,5 +1,5 @@
 // Configuración
-const API_URL = 'https://tu-backend.onrender.com/api';  // Cambiar después del despliegue
+const API_URL = 'https://bot-tienda-y5lh.onrender.com';  // Cambiar después del despliegue
 // Para pruebas locales: const API_URL = 'http://localhost:3000/api';
 
 // Gestión de sesión

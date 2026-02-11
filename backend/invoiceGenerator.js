@@ -1,56 +1,40 @@
-// backend/invoiceGenerator.js
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 
-async function generateInvoice(pedido) {
+async function generateInvoice(orderData) {
   return new Promise((resolve, reject) => {
     try {
-      // Crear carpeta invoices si no existe
-      const invoicesDir = path.join(__dirname, 'invoices');
-      if (!fs.existsSync(invoicesDir)) {
-        fs.mkdirSync(invoicesDir);
+      const doc = new PDFDocument({ margin: 50 });
+      const fileName = `factura-${orderData.orderId}.pdf`;
+      const folderPath = path.join(__dirname, 'invoices');
+      
+      if (!fs.existsSync(folderPath)) {
+        fs.mkdirSync(folderPath);
       }
 
-      const doc = new PDFDocument({ margin: 50 });
-      const fileName = `factura-${pedido.id}.pdf`;
-      const filePath = path.join(invoicesDir, fileName);
+      const filePath = path.join(folderPath, fileName);
       const stream = fs.createWriteStream(filePath);
       doc.pipe(stream);
 
       // Cabecera
       doc.fontSize(20).text('FACTURA', { align: 'center' });
       doc.moveDown();
-      doc.fontSize(12).text(`Número de pedido: ${pedido.id}`);
-      doc.text(`Fecha: ${new Date().toLocaleDateString()}`);
-      doc.text(`Cliente: ${pedido.cliente_nombre}`);
+      doc.fontSize(12).text(`Número: ${orderData.orderId}`);
+      doc.text(`Fecha: ${orderData.fecha || new Date().toLocaleString()}`);
+      doc.text(`Cliente: ${orderData.cliente_nombre}`);
       doc.moveDown();
       
-      // Tabla de productos
-      doc.fontSize(14).text('Productos:', { underline: true });
-      doc.moveDown(0.5);
-      
-      let y = doc.y;
-      doc.fontSize(10);
-      doc.text('Producto', 50, y, { width: 200 });
-      doc.text('Cantidad', 250, y, { width: 80 });
-      doc.text('Precio unit.', 330, y, { width: 80 });
-      doc.text('Subtotal', 410, y, { width: 80 });
-      
-      y += 20;
-      pedido.items.forEach(item => {
-        doc.text(item.nombre, 50, y, { width: 200 });
-        doc.text(item.cantidad.toString(), 250, y, { width: 80 });
-        doc.text(`$${item.precio_unitario}`, 330, y, { width: 80 });
-        doc.text(`$${item.precio_unitario * item.cantidad}`, 410, y, { width: 80 });
-        y += 20;
+      // Detalle de productos
+      doc.text('Productos:');
+      orderData.items.forEach((item, i) => {
+        doc.text(`${item.nombre} x${item.cantidad} = $${(item.precio_unitario * item.cantidad).toFixed(2)}`);
       });
-      
       doc.moveDown();
-      doc.fontSize(12).text(`Total: $${pedido.total}`, { align: 'right' });
+      doc.text(`Total: $${orderData.total}`, { bold: true });
       
       doc.end();
-      
+
       stream.on('finish', () => resolve(filePath));
       stream.on('error', reject);
     } catch (error) {
