@@ -9,40 +9,70 @@
 <body>
   <div class="container">
     <header>
-      <h1>🛍️ Tienda</h1>
+      <h1>🛍️ Tienda Online</h1>
+      <nav>
+        <button id="btnCatalogo">📋 Catálogo</button>
+        <button id="btnMisPedidos">📦 Mis Pedidos</button>
+      </nav>
     </header>
 
-    <!-- Catálogo de productos -->
-    <section id="catalogo">
-      <h2>Productos disponibles</h2>
-      <div id="productos-list" class="productos-grid"></div>
-    </section>
-
-    <!-- Carrito -->
-    <section id="carrito" style="display: none;">
-      <h2>Tu pedido</h2>
-      <div id="carrito-items"></div>
-      <div class="carrito-total">
-        <strong>Total: $<span id="total-carrito">0</span></strong>
+    <!-- Sección Catálogo -->
+    <section id="catalogo" class="active">
+      <h2>Productos Disponibles</h2>
+      <div id="productos-grid" class="grid"></div>
+      <div id="carrito-preview">
+        <h3>🛒 Carrito</h3>
+        <div id="carrito-items"></div>
+        <div id="carrito-total"></div>
+        <button id="btnCompletar" class="btn-primary">✅ Completar pedido</button>
       </div>
-      <form id="checkout-form">
-        <div class="form-group">
-          <label for="nombre">Nombre completo</label>
-          <input type="text" id="nombre" required>
-        </div>
-        <button type="submit">Enviar pedido</button>
-      </form>
-      <button id="seguir-comprando">Seguir comprando</button>
     </section>
 
-    <!-- Estado del pedido -->
-    <section id="estado-pedido" style="display: none;">
-      <div id="mensaje-estado"></div>
-      <div id="detalle-pedido"></div>
-      <div id="acciones-pedido"></div>
+    <!-- Sección Resumen del Pedido -->
+    <section id="resumen" class="hidden">
+      <h2>🧾 Resumen de tu pedido</h2>
+      <div id="resumen-detalle"></div>
+      <div id="resumen-total"></div>
+      <div class="acciones">
+        <button id="btnPagar" class="btn-success">💳 Pagar</button>
+        <button id="btnCancelarPedido" class="btn-danger">❌ Cancelar</button>
+        <button id="btnVolverCatalogo">🔙 Seguir comprando</button>
+      </div>
     </section>
+
+    <!-- Sección Métodos de Pago -->
+    <section id="metodos-pago" class="hidden">
+      <h2>💳 Selecciona método de pago</h2>
+      <div class="pago-opciones">
+        <button class="metodo" data-metodo="CUP">💵 CUP</button>
+        <button class="metodo" data-metodo="USD">💲 USD</button>
+        <button class="metodo" data-metodo="MLC">💶 MLC</button>
+      </div>
+      <button id="btnAtrasResumen">🔙 Atrás</button>
+    </section>
+
+    <!-- Sección Confirmación -->
+    <section id="confirmacion" class="hidden">
+      <div class="mensaje-confirmacion"></div>
+      <button id="btnVolverInicio">🔙 Volver al inicio</button>
+    </section>
+
+    <!-- Sección Mis Pedidos -->
+    <section id="mis-pedidos" class="hidden">
+      <h2>📦 Mis Pedidos</h2>
+      <div id="pedidos-lista"></div>
+      <button id="btnVolverDesdePedidos">🔙 Volver</button>
+    </section>
+
+    <!-- Formulario nombre cliente (modal simple) -->
+    <div id="modal-nombre" class="modal hidden">
+      <div class="modal-content">
+        <h3>Ingresa tu nombre</h3>
+        <input type="text" id="cliente-nombre" placeholder="Tu nombre">
+        <button id="btnGuardarNombre">Continuar</button>
+      </div>
+    </div>
   </div>
-
   <script src="script.js"></script>
 </body>
 </html>

@@ -15,21 +15,21 @@ if (process.env.NODE_ENV === 'production' && process.env.WEBHOOK_URL) {
   bot.bot.setWebHook(process.env.WEBHOOK_URL);
   console.log('✅ Webhook configurado:', process.env.WEBHOOK_URL);
 } else {
-  // En desarrollo, iniciar polling
   bot.bot.startPolling();
   console.log('✅ Polling iniciado (desarrollo)');
 }
 
-// Inicializar handlers después de definir el bot (tanto para webhook como polling)
+// Inicializar handlers
 bot.initHandlers();
 
-// Endpoint para webhook (Telegram enviará las actualizaciones aquí)
+// Endpoint para webhook
 app.post('/webhook', (req, res) => {
   bot.bot.processUpdate(req.body);
   res.sendStatus(200);
 });
 
 // ---------- ENDPOINTS PÚBLICOS (API REST) ----------
+// Obtener productos con stock > 0 (para clientes)
 app.get('/api/productos', async (req, res) => {
   try {
     const result = await db.query('SELECT * FROM productos WHERE cantidad > 0 ORDER BY nombre');
@@ -39,6 +39,7 @@ app.get('/api/productos', async (req, res) => {
   }
 });
 
+// Carrito
 app.get('/api/carrito/:sessionId', async (req, res) => {
   const { sessionId } = req.params;
   try {
@@ -64,7 +65,7 @@ app.post('/api/carrito/agregar', async (req, res) => {
 
     const index = carrito.findIndex(item => item.producto_id === producto_id);
     if (index !== -1) carrito[index].cantidad += cantidad;
-    else carrito.push({ producto_id: producto.id, nombre: producto.nombre, precio: producto.precio, cantidad });
+    else carrito.push({ producto_id: producto.id, nombre: producto.nombre, precio: parseFloat(producto.precio), cantidad });
 
     await db.query(
       `INSERT INTO carritos (chat_id, productos) VALUES ($1, $2)
@@ -91,6 +92,7 @@ app.post('/api/carrito/eliminar', async (req, res) => {
   }
 });
 
+// Crear pedido desde web
 app.post('/api/pedido', async (req, res) => {
   const { sessionId, clienteNombre, items, metodoPago } = req.body;
   if (!sessionId || !clienteNombre || !items || items.length === 0 || !metodoPago) {
@@ -103,7 +105,7 @@ app.post('/api/pedido', async (req, res) => {
       const prod = prodRes.rows[0];
       if (!prod) return res.status(404).json({ error: `Producto ${item.producto_id} no encontrado` });
       if (prod.cantidad < item.cantidad) return res.status(400).json({ error: `Stock insuficiente para ${prod.nombre}` });
-      total += prod.precio * item.cantidad;
+      total += parseFloat(prod.precio) * item.cantidad;
     }
 
     const pedidoRes = await db.query(
@@ -125,10 +127,20 @@ app.post('/api/pedido', async (req, res) => {
 
     const itemsConNombre = await Promise.all(items.map(async (item) => {
       const prod = await db.query('SELECT nombre, precio FROM productos WHERE id = $1', [item.producto_id]);
-      return { ...item, nombre: prod.rows[0].nombre, precio: prod.rows[0].precio };
+      return { 
+        ...item, 
+        nombre: prod.rows[0].nombre, 
+        precio: parseFloat(prod.rows[0].precio) 
+      };
     }));
 
-    await bot.enviarPedidoAlDueño({ pedidoId, clienteNombre, items: itemsConNombre, total, metodo: metodoPago });
+    await bot.enviarPedidoAlDueño({ 
+      pedidoId, 
+      clienteNombre, 
+      items: itemsConNombre, 
+      total, 
+      metodo: metodoPago 
+    });
     res.json({ success: true, pedidoId, mensaje: 'Pedido enviado al vendedor' });
   } catch (err) {
     console.error(err);
@@ -136,6 +148,7 @@ app.post('/api/pedido', async (req, res) => {
   }
 });
 
+// Obtener pedidos de un cliente (web)
 app.get('/api/pedidos/:sessionId', async (req, res) => {
   const { sessionId } = req.params;
   try {

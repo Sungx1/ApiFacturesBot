@@ -5,20 +5,17 @@ const generateInvoice = require('./invoiceGenerator');
 class OrderBot {
   constructor(token, ownerId) {
     this.token = token;
-    this.ownerId = ownerId;
+    this.ownerId = ownerId; // Único admin
     this.userState = {};
     
     if (process.env.NODE_ENV === 'production') {
-      // En producción usamos webhook (se configurará desde server.js)
       this.bot = new TelegramBot(token);
     } else {
-      // En desarrollo usamos polling
       this.bot = new TelegramBot(token, { polling: true });
       this.initHandlers();
     }
   }
 
-  // Método para iniciar los handlers (llamado desde server.js después de configurar webhook)
   initHandlers() {
     // -------------------- MENSAJES DE TEXTO --------------------
     this.bot.on('message', async (msg) => {
@@ -26,19 +23,27 @@ class OrderBot {
       const text = msg.text;
       if (text && text.startsWith('/')) return;
 
-      if (this.userState[chatId]) {
+      // Si es admin y está en flujo de agregar producto
+      if (chatId == this.ownerId && this.userState[chatId]) {
         const state = this.userState[chatId];
         if (state.step === 'awaiting_product_name') await this.handleAddProductName(msg);
         else if (state.step === 'awaiting_product_price') await this.handleAddProductPrice(msg);
         else if (state.step === 'awaiting_product_stock') await this.handleAddProductStock(msg);
         else if (state.step === 'awaiting_product_details') await this.handleAddProductDetails(msg);
-        else if (state.step === 'awaiting_quantity') await this.handleQuantityInput(msg);
         return;
       }
 
-      if (chatId != this.ownerId) {
-        await this.showMainMenu(chatId);
+      // Si es cliente y está esperando cantidad
+      if (this.userState[chatId]?.step === 'awaiting_quantity') {
+        await this.handleQuantityInput(msg);
+        return;
       }
+
+      // Si es admin y no está en flujo, no hacer nada (solo comandos)
+      if (chatId == this.ownerId) return;
+
+      // Cliente: mostrar menú principal
+      await this.showMainMenu(chatId);
     });
 
     // -------------------- COMANDOS --------------------
@@ -51,11 +56,17 @@ class OrderBot {
     });
 
     this.bot.onText(/\/admin/, async (msg) => {
-      if (msg.chat.id == this.ownerId) await this.showAdminMenu(msg.chat.id);
+      if (msg.chat.id == this.ownerId) {
+        await this.showAdminMenu(msg.chat.id);
+      } else {
+        await this.bot.sendMessage(msg.chat.id, '⛔ No autorizado.');
+      }
     });
 
     this.bot.onText(/\/reiniciar/, async (msg) => {
-      if (msg.chat.id == this.ownerId) await this.resetDatabase(msg.chat.id);
+      if (msg.chat.id == this.ownerId) {
+        await this.resetDatabase(msg.chat.id);
+      }
     });
 
     // -------------------- CALLBACK QUERIES --------------------
@@ -82,7 +93,7 @@ class OrderBot {
           await this.deleteProduct(chatId, productId, msg);
         }
         else if (data === 'admin_view_orders') { await this.viewOrders(chatId, msg); }
-        else if (data === 'reiniciar_bot') { await this.resetDatabase(chatId, msg); } // Botón desde admin menu
+        else if (data === 'reiniciar_bot') { await this.resetDatabase(chatId, msg); }
         else if (data === 'envio_si' || data === 'envio_no') {
           const tieneEnvio = data === 'envio_si' ? 'si' : 'no';
           await this.handleShippingCallback(chatId, tieneEnvio, msg);
@@ -244,17 +255,10 @@ class OrderBot {
 
   async resetDatabase(chatId, msg = null) {
     try {
-      // Vaciar tablas
       await db.query('TRUNCATE TABLE items_pedido, pedidos, carritos, productos RESTART IDENTITY CASCADE');
-      
-      // Intentar eliminar mensajes recientes del bot (últimos 10)
-      try {
-        // No podemos obtener lista de mensajes, pero podemos intentar borrar el mensaje actual si existe
-        if (msg) {
-          await this.bot.deleteMessage(chatId, msg.message_id);
-        }
-      } catch (e) {}
-      
+      if (msg) {
+        try { await this.bot.deleteMessage(chatId, msg.message_id); } catch (e) {}
+      }
       await this.bot.sendMessage(chatId, '✅ *Base de datos reiniciada.*\nTodos los productos, pedidos y carritos han sido eliminados.\n\nEl bot está como nuevo.', { parse_mode: 'Markdown' });
       await this.showAdminMenu(chatId);
     } catch (error) {
