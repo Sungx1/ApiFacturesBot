@@ -1,4 +1,4 @@
-const API_URL = 'https://tu-backend.onrender.com/api'; // CAMBIAR por tu URL de Render
+const API_URL = 'https://bot-tienda-y5lh.onrender.com/api'; // CAMBIAR por tu URL de Render
 let sessionId = localStorage.getItem('sessionId');
 if (!sessionId) {
   sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);

@@ -20,7 +20,7 @@ const initDB = async () => {
     )
   `);
 
-  // Tabla de pedidos
+  // Tabla de pedidos - ¡YA INCLUYE metodo_pago!
   await pool.query(`
     CREATE TABLE IF NOT EXISTS pedidos (
       id SERIAL PRIMARY KEY,
@@ -31,7 +31,7 @@ const initDB = async () => {
       fecha_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       fecha_aprobacion TIMESTAMP,
       total DECIMAL(10,2),
-      metodo_pago TEXT
+      metodo_pago TEXT   -- ← COLUMNA AGREGADA
     )
   `);
 
@@ -46,7 +46,7 @@ const initDB = async () => {
     )
   `);
 
-  // Carritos (session_id para web, chat_id para telegram)
+  // Carritos
   await pool.query(`
     CREATE TABLE IF NOT EXISTS carritos (
       id SERIAL PRIMARY KEY,
